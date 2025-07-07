@@ -1,0 +1,52 @@
+---
+// src/components/VideoCard.astro
+import { slugify } from '../utils/slugify';
+import type { VideoData } from '../utils/data';
+import { desk, nama, url } from '../utils/site';
+
+export interface Props {
+  video: VideoData;
+  headingLevel?: 'h2' | 'h3';
+}
+
+const { video, headingLevel = 'h2' } = Astro.props;
+const videoSlug = slugify(video.title);
+
+const videoDetailPath = `${url}/${videoSlug}-${video.id}/`;
+
+const placeholderImage = `${url}/placeholder.png`;
+---
+
+<a href={videoDetailPath} class="video-card">
+  <div class="thumbnail-container">
+    <img
+      src={video.thumbnail}
+      alt={video.title}
+      title={video.title}
+      loading="lazy"
+      class="video-thumbnail"
+      onerror={`this.onerror=null; this.src='${placeholderImage}';`}
+    />
+    {video.previewUrl && (
+      <video
+        preload="none"
+        loop
+        muted
+        class="video-preview"
+        data-src={video.previewUrl}
+        onerror="this.closest('.video-card').classList.add('video-preview-error');"
+      >
+      </video>
+    )}
+  </div>
+  <div class="video-info">
+    {headingLevel === 'h2' ? (
+      <h2 class="video-title">{video.title}</h2>
+    ) : (
+      <h3 class="video-title">{video.title}</h3>
+    )}
+    <p class="video-category">{video.category}</p>
+  </div>
+</a>
+
+<script type="text/javascript">document.querySelectorAll('.video-card').forEach(card=>{const videoPreview=card.querySelector('.video-preview');if(videoPreview){card.addEventListener('mouseenter',()=>{if(!card.classList.contains('video-preview-error')){const src=videoPreview.getAttribute('data-src');if(src&&videoPreview.src!==src){videoPreview.src=src;videoPreview.load()}videoPreview.play().catch(e=>{console.warn('Video playback failed, adding error class:',e);card.classList.add('video-preview-error')})}});card.addEventListener('mouseleave',()=>{if(videoPreview&&!videoPreview.paused){videoPreview.pause();videoPreview.currentTime=0}})}});</script>

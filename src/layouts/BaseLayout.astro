@@ -1,0 +1,128 @@
+---
+// src/layouts/BaseLayout.astro
+import { desk, nama, url } from '../utils/site';
+export interface Props {
+  title: string;
+  description: string;
+  preconnectDomains?: string[];
+  siteName?: string;
+  siteUrl?: string;
+  keywords?: string;
+  schemaJsonLd?: Record<string, any>[]; 
+}
+
+
+const {
+  title,
+  description,
+  preconnectDomains = [],
+  siteName = nama,
+  siteUrl = url,
+  keywords,
+  schemaJsonLd = [], 
+} = Astro.props;
+
+const ogImageFullUrl = new URL(`${url}/logo.png`, url).href;
+
+const websiteSchema = {
+  "@context": "http://schema.org",
+  "@type": "WebSite",
+  "name": nama,
+  "url": url,
+  "description": desk,
+  "publisher": {
+    "@type": "Organization",
+    "name": nama,
+    "logo": {
+      "@type": "ImageObject",
+      "url": `${url}/logo.png`
+    }
+  },
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": `${url}/video/{query}/1`
+    },
+    "query-input": "required name=query"
+  }
+};
+
+const organizationSchema = {
+  "@context": "http://schema.org",
+  "@type": "Organization",
+  "name": nama,
+  "url": url,
+  "logo": `${url}/logo.png`,
+  "description": desk,
+  "sameAs": []
+};
+
+const baseLayoutSchemas = [
+  websiteSchema,
+  organizationSchema
+];
+
+const combinedJsonLdSchemas = [
+  ...baseLayoutSchemas,
+  ...schemaJsonLd
+];
+
+---
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:title" content={title} />
+    <link rel="canonical" href={Astro.url.href} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={Astro.url.href} />
+    <meta property="og:type" content="website" />
+    <meta name="keywords" content={keywords || title} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:locale" content="id_ID" />
+    <meta property="og:image" content={ogImageFullUrl} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageFullUrl} />
+    {preconnectDomains.map(domain => (
+      <link rel="preconnect" href={domain} crossorigin/>
+    ))}
+    
+    {combinedJsonLdSchemas.map((schema) => (
+      <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+    ))}
+    <link rel="stylesheet" href="/global.css" />
+  </head>
+  <body>
+    <header>
+      <nav class="main-nav">
+        <a href={url} class="logo" aria-label={`${nama} - Beranda`}>{nama}</a>
+        <form id="searchForm" action="/video/" method="get" class="search-form" role="search">
+          <input type="search" name="query" placeholder="Cari video..." required />
+          <button type="submit" aria-label="Mulai pencarian">Cari</button>
+        </form>
+        <ul class="nav-links">
+          <li><a href={`${url}`}>Home</a></li>
+          <li><a href={`${url}/category/`}>Category</a></li>
+          <li><a href={`${url}/tags/`}>Tags</a></li>
+          <li>
+            <button id="darkModeToggle" class="dark-mode-toggle" aria-label="Toggle dark mode">☀️</button>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <slot />
+
+    <footer>
+      <p>&copy; {new Date().getFullYear()} {nama}. All rights reserved.</p>
+    </footer>
+    <script type="text/javascript" is:inline>document.addEventListener('DOMContentLoaded',()=>{const searchForm=document.getElementById('searchForm');if(searchForm){searchForm.addEventListener('submit',function(event){event.preventDefault();const input=searchForm.querySelector('input[name="query"]');const query=input?input.value.trim():'';if(query){const slugifiedQuery=query.toLowerCase().replace(/\s+/g,'-');window.location.href=`/video/${ slugifiedQuery }`}else{window.location.href=`/video/`}})}const toggleButton=document.getElementById('darkModeToggle');const body=document.body;const LIGHT_ICON='☀️';const DARK_ICON='🌙';const STORAGE_KEY='darkModeEnabled';function applyTheme(isDarkMode){if(isDarkMode){body.classList.add('dark-mode');toggleButton.textContent=DARK_ICON}else{body.classList.remove('dark-mode');toggleButton.textContent=LIGHT_ICON}}const savedMode=localStorage.getItem(STORAGE_KEY);if(savedMode==='true'){applyTheme(true)}else if(savedMode===null&&window.matchMedia('(prefers-color-scheme: dark)').matches){applyTheme(true)}else{applyTheme(false)}if(toggleButton){toggleButton.addEventListener('click',()=>{const isCurrentlyDarkMode=body.classList.contains('dark-mode');const newMode=!isCurrentlyDarkMode;applyTheme(newMode);localStorage.setItem(STORAGE_KEY,newMode)})}});</script>
+  </body>
+</html>
